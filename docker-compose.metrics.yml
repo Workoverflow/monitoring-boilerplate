@@ -5,8 +5,10 @@ networks:
     driver: bridge
 
 volumes:
-    prometheus_data: {}
-    grafana_data: {}
+  prometheus_storage: {}
+  grafana_storage: {}
+  certs:
+    driver: local
 
 services:
   prometheus:
@@ -24,10 +26,16 @@ services:
       - '--storage.tsdb.retention.time=745h'
       - '--web.enable-lifecycle'
     restart: unless-stopped
-    mem_limit: ${PROMETHEUS_MEM_LIMIT}
-    mem_reservation: ${PROMETHEUS_MEM_RESERVATION}
-    expose:
-      - 9090
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: ${PROMETHEUS_MEM_LIMIT}
+        reservations:
+          cpus: '0.25'
+          memory: ${PROMETHEUS_MEM_RESERVATION}
+    ports:
+      - 9001:9090
     networks:
       - monitoring
 
@@ -36,17 +44,23 @@ services:
     container_name: grafana
     user: "104"
     volumes:
-      - ./var/grafana/data:/var/lib/grafana
+      - grafana_storage:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning
     environment:
       - GF_SECURITY_ADMIN_USER=${ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
     restart: unless-stopped
-    mem_limit: ${GRAFANA_MEM_LIMIT}
-    mem_reservation: ${GRAFANA_MEM_RESERVATION}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: ${GRAFANA_MEM_LIMIT}
+        reservations:
+          cpus: '0.25'
+          memory: ${GRAFANA_MEM_RESERVATION}
     ports:
-      - 3000:3000
+      - 8000:3000
     networks:
       - monitoring
     depends_on:
