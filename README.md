@@ -20,7 +20,12 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo apt update &&
 sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
-
+# How to fix "Authentication of [kibana_system] was terminated by realm [reserved] - failed to authenticate user [kibana_system]"?
+```
+docker exec -it elasticsearch bash
+bin/elasticsearch-setup-passwords interactive
+set new password for users
+```
 
 # Useful links
 1. [How to install docker](https://docs.docker.com/engine/install/ubuntu/) 

@@ -36,16 +36,19 @@ services:
           "instances:\n"\
           "  - name: es01\n"\
           "    dns:\n"\
-          "      - elasticsearch\n"\
+          "      - es01\n"\
           "      - localhost\n"\
+          "      - 172.27.0.2\n"\
           "    ip:\n"\
           "      - 127.0.0.1\n"\
+          "      - 172.27.0.2\n"\
           "  - name: kibana\n"\
           "    dns:\n"\
           "      - kibana\n"\
           "      - localhost\n"\
           "    ip:\n"\
           "      - 127.0.0.1\n"\
+          "      - 172.27.0.2\n"\
           > config/certs/instances.yml;
           bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
           unzip config/certs/certs.zip -d config/certs;
@@ -57,7 +60,7 @@ services:
         echo "Waiting for Elasticsearch availability";
         until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
         echo "All done!";
       '
     healthcheck:
@@ -66,7 +69,7 @@ services:
       timeout: 5s
       retries: 120
 
-  elasticsearch:
+  es01:
     image: elasticsearch:8.12.0
     container_name: elasticsearch
     environment:
@@ -116,7 +119,7 @@ services:
       - kibana_storage:/usr/share/kibana/data
     environment:
       - SERVERNAME=kibana
-      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=https://es01:9200
       - ELASTICSEARCH_USERNAME=${KIBANA_USER}
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
@@ -144,7 +147,7 @@ services:
     ports:
       - "8001:5601"
     depends_on:
-      elasticsearch:
+      es01:
         condition: service_healthy
     networks:
       - monitoring
